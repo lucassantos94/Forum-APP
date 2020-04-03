@@ -1,0 +1,37 @@
+version: '3'
+
+services:
+  db:
+    image: 'mongo:latest'
+    container_name: 'mongodb-container'
+    ports: 
+      - "27017-27019:27017-27019" 
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: root2
+  restore:
+    image: 'mongodb'
+    volumes:
+      - ./mongodbdump:/dump
+    links: 
+      - "db"
+    command: mongorestore --username root --password root2 --host db:27017  /dump/
+  node:
+    image: 'node'
+    container_name: 'nodejs-container'
+    build:
+      context: .
+      dockerfile: ./docker/node/dockerfile
+    links: 
+      - "db"
+    ports: 
+      - "80:${NODE_PORT}" 
+    environment:
+      MONGO_HOST: db
+      MONGO_COLLECTION: comicclan
+      MONGO_PORT: 27017
+      MONGO_USER: root
+      MONGO_PASS: root2
+      PORT: ${NODE_PORT}
+      SECRET: ${SECRET}
+    command: npm run start
